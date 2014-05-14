@@ -46,9 +46,9 @@ FIDEL always reads from the STDIN and writes to STDOUT.
 Requirements
 ------------
 
-In order to run FIDEL you will need the following
+In order to run FIDEL you will need the following:
 
-## Phrase Table
+### Phrase Table
 
 A phrase table should be formatted as per Moses/Pharoah, that is of 
 the form
@@ -60,11 +60,11 @@ For example
     to go ||| gehen ||| 1.0 0.5 0.3 0.2 2.718 
     to go ||| fahren ||| 0.2 0.3 0.4 0.5 2.718
 
-## Language Model
+### Language Model
 
 The language model should be in [ARPA Format](http://www.speech.sri.com/projects/srilm/manpages/ngram-format.5.html).
 
-## Weights File
+### Weights File
 
 The weights should be one per line of the format:
 
