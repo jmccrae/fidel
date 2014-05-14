@@ -324,6 +324,7 @@ public class Fidel {
         try {
             final Fidel fidel = new Fidel(languageModel, weights);
             final Scanner in = new Scanner(System.in);
+            System.err.println("Translation system initialized");
             while(in.hasNextLine()) {
                 final String line = in.nextLine();
                 final List<Translation> translations = fidel.decode(Arrays.asList(FairlyGoodTokenizer.split(line)), phraseTable, DEFAULT_FEATURE_NAMES, n, beamSize, useLazy);
