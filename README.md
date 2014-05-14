@@ -1,8 +1,9 @@
 FIDEL
 =====
 
-FIDEL Is a DEcoder and Language model, primarily meant for the educational
-purposes it is a small and compact machine translation system.
+FIDEL Is a DEcoder and Language model. FIDEL is a small and compact
+machine translation system, primarily meant for the educational
+purposes.
 
 Installation
 ------------
@@ -76,4 +77,9 @@ At least the following should be provided:
 * `LM`: The language model penalty
 * `TM\:phi(t|f)`, `TM\:lex(t|f)`, `TM\:phi(f|t)`, `TM\:lex(f|t)`, `TM\:phrasePenalty`: The weights for the phrase table scores
 
+Acknowledgments
+---------------
 
+FIDEL is licensed under the BSD license.
+
+FIDEL was originally developed as part of the [Monnet Translation System](http://github.com/monnetproject/translation).
