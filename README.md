@@ -77,6 +77,15 @@ At least the following should be provided:
 * `LM`: The language model penalty
 * `TM\:phi(t|f)`, `TM\:lex(t|f)`, `TM\:phi(f|t)`, `TM\:lex(f|t)`, `TM\:phrasePenalty`: The weights for the phrase table scores
 
+Evaluation
+----------
+
+The `multi-bleu.pl` script from [Moses](http://statmt.org/moses/) is included to evaluate translation quality, it
+can be run as follows
+
+    fidel ... > translations
+    ./multi-bleu.pl -lc references < translations
+
 Acknowledgments
 ---------------
 
