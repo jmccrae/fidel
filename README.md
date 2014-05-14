@@ -39,7 +39,7 @@ is as follows
      -w <arg>   The weights file
      -z         Use lazy distortion
     
-    example: fidel -p phrase-table.gz -l europarl.arpa.gz -w moses.ini < data
+    example: fidel -p phrase-table.gz -l europarl.arpa.gz -w weights.cfg < data
 
 FIDEL always reads from the STDIN and writes to STDOUT.
 
