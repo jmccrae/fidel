@@ -132,6 +132,7 @@ public class SQLPhraseTable implements PhraseTable {
             if(verbose) {
                 System.err.println(String.format("Collected %d translation candidates", result.size()));
             }
+            stat.close();
             return result;
         } catch (SQLException x) {
             throw new RuntimeException(x);

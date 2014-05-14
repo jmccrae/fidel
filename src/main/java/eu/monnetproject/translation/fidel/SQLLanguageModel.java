@@ -89,12 +89,14 @@ public class SQLLanguageModel implements IntegerLanguageModel {
             if (rs.next()) {
                 final double score = rs.getDouble("score");
                 final double backoff = rs.getDouble("backoff");
+                statement.close();
                 if (backoff == 0.0) {
                     return new double[]{score};
                 } else {
                     return new double[]{score, backoff};
                 }
             } else {
+                statement.close();
                 return null;
             }
         } catch (SQLException x) {

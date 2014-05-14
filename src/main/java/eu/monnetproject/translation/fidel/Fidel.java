@@ -90,20 +90,25 @@ public class Fidel {
     private List<Translation> decode(List<String> phrase, PhraseTable phraseTable, String[] featureNames, int nBest, int beamSize, boolean useLazy) {
         FidelDecoder.wordMap = invWordMap;
         FidelDecoder.srcWordMap = srcWordMap;
-        int[] src = convertPhrase(phrase);
-        Object2ObjectMap<Phrase, Collection<PhraseTranslation>> pt = convertPT(phraseTable.lookup(phrase), trgWordMap, featureNames, beamSize + 10);
+        // Convert the phrase to an integer array
+        int[] src = convertPhrase(phrase, srcWordMap, srcInvMap);
+        // Collect translation candidates
+        Object2ObjectMap<Phrase, Collection<PhraseTranslation>> pt = convertPT(phraseTable.lookup(phrase), featureNames, beamSize + 10);
+        // Extract paramaters
         int lmN = languageModel.order();
         double[] wts = new double[featureNames.length + FidelDecoder.PT];
         int i = FidelDecoder.PT;
-        //wts[FidelDecoder.UNK] = -100 * (weights.containsKey("UnknownWord") ? weights.get("UnknownWord") : 1.0);
-        wts[FidelDecoder.UNK] = -100;
+        wts[FidelDecoder.UNK] = weights.getProperty("UnknownWord") != null ? Double.parseDouble(weights.getProperty("UnknownWord")) : -100.0;
         wts[FidelDecoder.DIST] = weights.getProperty("LinearDistortion") != null ? Double.parseDouble(weights.getProperty("LinearDistortion")) : 0.0;
         wts[FidelDecoder.LM] = weights.getProperty("LM") != null ? Double.parseDouble(weights.getProperty("LM")) : 0.0;
         for (String feat : featureNames) {
             wts[i++] = weights.getProperty(feat) != null ? Double.parseDouble(weights.getProperty(feat))
                     : (weights.getProperty("TM:" + feat) != null ? Double.parseDouble(weights.getProperty("TM:" + feat)) : 0);
         }
+        // Do decoding
         final Solution[] translations = FidelDecoder.decode(src, pt, languageModel, lmN, wts, distortionLimit, nBest, beamSize, useLazy);
+        
+        // Convert translations to strings
         final StringBuilder sb = new StringBuilder();
         for (String w : phrase) {
             if (sb.length() != 0) {
@@ -114,23 +119,23 @@ public class Fidel {
         return convertTranslations(translations, new Label(sb.toString(), phraseTable.getForeignLanguage()), phraseTable.getTranslationLanguage(), featureNames);
     }
 
-    private int[] convertPhrase(List<String> phrase) {
+    private int[] convertPhrase(List<String> phrase, Object2IntMap<String> wordMap, Int2ObjectMap<String> invMap) {
         final int[] p = new int[phrase.size()];
         int i = 0;
-        int W = srcWordMap.size();
+        int W = wordMap.size();
         for (String s : phrase) {
-            if (srcWordMap.containsKey(s)) {
-                p[i++] = srcWordMap.getInt(s);
+            if (wordMap.containsKey(s)) {
+                p[i++] = wordMap.getInt(s);
             } else {
                 p[i++] = ++W;
-                srcWordMap.put(s, W);
-                srcInvMap.put(W, s);
+                wordMap.put(s, W);
+                invMap.put(W, s);
             }
         }
         return p;
     }
 
-    private Phrase convertPhrase(String[] phrase, Object2IntMap<String> dict) {
+    private Phrase convertPhrase(String[] phrase, Object2IntMap<String> dict, Int2ObjectMap<String> invMap) {
         final int[] p = new int[phrase.length];
         int i = 0;
         int W = dict.size();
@@ -139,23 +144,21 @@ public class Fidel {
                 p[i++] = dict.getInt(s);
             } else {
                 p[i++] = ++W;
-                if (srcWordMap == dict) {
-                    dict.put(s, W);
-                    srcInvMap.put(W, s);
-                }
+                dict.put(s, W);
+                invMap.put(W, s);
             }
         }
         return new Phrase(p);
     }
 
-    private Object2ObjectMap<Phrase, Collection<PhraseTranslation>> convertPT(Iterable<PhraseTable.PhraseTableEntry> phraseTable, Object2IntMap<String> trgDict, String[] featureNames, int maxSize) {
+    private Object2ObjectMap<Phrase, Collection<PhraseTranslation>> convertPT(Iterable<PhraseTable.PhraseTableEntry> phraseTable, String[] featureNames, int maxSize) {
         final Object2ObjectOpenHashMap<Phrase, Collection<PhraseTranslation>> pt = new Object2ObjectOpenHashMap<Phrase, Collection<PhraseTranslation>>();
         final Object2ObjectOpenHashMap<Phrase, DoubleRBTreeSet> approxScores = new Object2ObjectOpenHashMap<Phrase, DoubleRBTreeSet>();
         for (PhraseTable.PhraseTableEntry pte : phraseTable) {
             final Phrase src;// = convertPhrase(FairlyGoodTokenizer.split(pte.getForeign().asString()), srcWordMap);
             final Phrase trg;// = convertPhrase(FairlyGoodTokenizer.split(pte.getTranslation().asString()), trgDict);
 
-            src = convertPhrase(FairlyGoodTokenizer.split(pte.getForeign().asString()), srcWordMap);
+            src = convertPhrase(FairlyGoodTokenizer.split(pte.getForeign().asString()), srcWordMap, srcInvMap);
             if (maxSize > 0) {
                 if (!approxScores.containsKey(src)) {
                     approxScores.put(src, new DoubleRBTreeSet());
@@ -172,7 +175,7 @@ public class Fidel {
                     as.add(pte.getApproxScore());
                 }
             }
-            trg = convertPhrase(FairlyGoodTokenizer.split(pte.getTranslation().asString()), trgDict);
+            trg = convertPhrase(FairlyGoodTokenizer.split(pte.getTranslation().asString()), trgWordMap, invWordMap);
             final double[] wts = convertWeights(pte.getFeatures(), featureNames);
             final PhraseTranslation translation = new PhraseTranslation(trg.p, wts);
             if (!pt.containsKey(src)) {
@@ -224,6 +227,8 @@ public class Fidel {
         opts.addOption("w", true, "The weights file");
         opts.addOption("f", true, "The foreign (source) language");
         opts.addOption("t", true, "The translation (target) language");
+        opts.addOption("b", true, "The beam size (default=50)");
+        opts.addOption("z", false, "Use lazy distortion");
         opts.addOption("v", false, "Display debugging information");
         opts.addOption("s", false, "Output scores");
         opts.addOption("?", false, "Display this message");
@@ -260,6 +265,19 @@ public class Fidel {
         if(cli.hasOption("v")) {
             System.setProperty("fidel.verbose", "true");
         }
+        final int beamSize;
+        if(cli.hasOption("b")) {
+            try {
+                beamSize = Integer.parseInt(cli.getOptionValue("b"));
+            } catch(NumberFormatException x) {
+                System.err.println("Beam size must be an integer");
+                help.printHelp("fidel [opts]", fidelHeader, opts, exampleUsage);
+                return;
+            }
+        } else {
+            beamSize = 50;
+        }
+        final boolean useLazy = cli.hasOption("z");
         final String foreignLanguage;
         if (cli.hasOption("f")) {
             foreignLanguage = cli.getOptionValue("f");
@@ -309,7 +327,7 @@ public class Fidel {
             final Scanner in = new Scanner(System.in);
             while(in.hasNextLine()) {
                 final String line = in.nextLine();
-                final List<Translation> translations = fidel.decode(Arrays.asList(FairlyGoodTokenizer.split(line)), phraseTable, DEFAULT_FEATURE_NAMES, n);
+                final List<Translation> translations = fidel.decode(Arrays.asList(FairlyGoodTokenizer.split(line)), phraseTable, DEFAULT_FEATURE_NAMES, n, beamSize, useLazy);
                 for(Translation t : translations) {
                     if(outputScores) {
                         System.out.println(t);  
