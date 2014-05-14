@@ -131,6 +131,12 @@ public class SQLLanguageModel implements IntegerLanguageModel {
         private int n = 0;
 
         public SQLLanguageModel getModel(File file) {
+
+            try {
+                Class.forName("org.sqlite.JDBC");
+            } catch (ClassNotFoundException x) {
+                System.err.println("SQLite JDBC Drive not available");
+            }
             if (file.getPath().endsWith(".db")) {
                 try {
                     init(file);

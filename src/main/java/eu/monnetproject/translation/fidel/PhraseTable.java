@@ -36,6 +36,8 @@ public interface PhraseTable {
     String getTranslationLanguage();
     
     Iterable<PhraseTableEntry> lookup(final List<String> terms);
+
+    public void close();
     
     public static class PhraseTableEntry {
         private final Fidel.Label foreign;

@@ -338,7 +338,7 @@ public class FidelDecoder {
         for (int w : pt.words) {
             if (pos < baselineBuffer.length) {
                 baselineBuffer[pos++] = w;
-                score += weights[LM] * lmScore(baselineBuffer, pos, languageModel, lmN, weights[UNK]);
+                score += weights[LM] * lmScore(baselineBuffer, pos, languageModel, Math.min(pos, lmN), weights[UNK]);
             }
         }
         assert (!Double.isInfinite(score) && !Double.isNaN(score));
@@ -427,7 +427,7 @@ public class FidelDecoder {
         }
         // remove the "lost n-grams"
         for (int i = 0; i < Math.min(lmN, dist); i++) {
-            final double lm = lmScore(buf, pos - i, languageModel, lmN, weights[UNK]);
+            final double lm = lmScore(buf, pos - i, languageModel, Math.min(pos - i, lmN), weights[UNK]);
             score[0] -= weights[LM] * lm;
             score[1 + LM] -= lm;
         }
@@ -437,12 +437,12 @@ public class FidelDecoder {
         //for (int w : pt.p) {
         for (int i = 0; i < pt.words.length; i++) {
             buf[pos - dist + i] = pt.words[i];
-            final double lm = lmScore(buf, pos + i + 1, languageModel, lmN, weights[UNK]);
+            final double lm = lmScore(buf, pos + i + 1, languageModel, Math.min(pos + i + 1, lmN), weights[UNK]);
             score[0] += weights[LM] * lm;
             score[1 + LM] += lm;
         }
         for (int i = 0; i < Math.min(lmN, dist); i++) {
-            final double lm = lmScore(buf, pos - i, languageModel, lmN, weights[UNK]);
+            final double lm = lmScore(buf, pos - i, languageModel, Math.min(pos - i, lmN), weights[UNK]);
             score[0] += weights[LM] * lm;
             score[1 + LM] += lm;
         }
@@ -490,7 +490,7 @@ public class FidelDecoder {
             if (singleTranslations == null || singleTranslations.isEmpty()) {
                 scorePartial[i] = weights[UNK];
                 baselineBuffer[pos++] = src[i];
-                scorePartial[i] += weights[LM] * lmScore(baselineBuffer, pos, languageModel, lmN, weights[UNK]);
+                scorePartial[i] += weights[LM] * lmScore(baselineBuffer, pos, languageModel, Math.min(pos,lmN), weights[UNK]);
             } else {
                 double bestScore = -Double.MAX_VALUE;
                 int ties = 0;

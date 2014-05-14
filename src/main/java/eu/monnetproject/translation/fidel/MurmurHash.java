@@ -39,6 +39,9 @@ public class MurmurHash {
     }
 
     public static int hash32(final int[] data, final int offset, final int length) {
+        if(offset < 0 || offset > data.length) {
+            throw new IllegalArgumentException();
+        }
         final int seed = 0x9747b28c;
         // 'm' and 'r' are mixing constants generated offline.
         // They're not really 'magic', they just happen to work well.

@@ -224,6 +224,8 @@ public class Fidel {
         opts.addOption("w", true, "The weights file");
         opts.addOption("f", true, "The foreign (source) language");
         opts.addOption("t", true, "The translation (target) language");
+        opts.addOption("v", false, "Display debugging information");
+        opts.addOption("s", false, "Output scores");
         opts.addOption("?", false, "Display this message");
         final HelpFormatter help = new HelpFormatter();
         final String fidelHeader = "FIDEL: A Simple Decoder for Machine Translation";
@@ -255,6 +257,9 @@ public class Fidel {
             help.printHelp("fidel [opts]", fidelHeader, opts, exampleUsage);
             return;
         }
+        if(cli.hasOption("v")) {
+            System.setProperty("fidel.verbose", "true");
+        }
         final String foreignLanguage;
         if (cli.hasOption("f")) {
             foreignLanguage = cli.getOptionValue("f");
@@ -267,6 +272,7 @@ public class Fidel {
         } else {
             targetLanguage = "en";
         }
+        final boolean outputScores = cli.hasOption("s");
         final Properties weights = new Properties();
         try {
             weights.load(new FileReader(cli.getOptionValue("w")));
@@ -304,9 +310,17 @@ public class Fidel {
             while(in.hasNextLine()) {
                 final String line = in.nextLine();
                 final List<Translation> translations = fidel.decode(Arrays.asList(FairlyGoodTokenizer.split(line)), phraseTable, DEFAULT_FEATURE_NAMES, n);
+                for(Translation t : translations) {
+                    if(outputScores) {
+                        System.out.println(t);  
+                    } else {
+                        System.out.println(t.getTargetLabel());
+                    }
+                }
             }
         } finally {
             languageModel.close();
+            phraseTable.close();
         }
 
     }
@@ -344,10 +358,6 @@ public class Fidel {
             return trgLabel;
         }
 
-        public URI getEntity() {
-            return null;
-        }
-
         public double getScore() {
             return solution.score();
         }
@@ -356,6 +366,13 @@ public class Fidel {
         public Collection<Feature> getFeatures() {
             return Arrays.asList(features);
         }
+
+        @Override
+        public String toString() {
+            return String.format("%s [%.6f from %s]", trgLabel, solution.score(), srcLabel);
+        }
+        
+        
     }
 
     public static class Label {
@@ -375,6 +392,12 @@ public class Fidel {
         public String getLanguage() {
             return language;
         }
+
+        @Override
+        public String toString() {
+            return label;
+        }
+        
     }
 
     /**

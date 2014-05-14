@@ -51,7 +51,8 @@ public class SQLPhraseTable implements PhraseTable {
     private final String foreignLanguage, translationLanguage;
     private final String[] features;
     private final Connection conn;
-    
+    private static final boolean verbose = Boolean.parseBoolean(System.getProperty("fidel.verbose", "false"));
+
     static {
         try {
             Class.forName("org.sqlite.JDBC");
@@ -78,7 +79,17 @@ public class SQLPhraseTable implements PhraseTable {
     public String getTranslationLanguage() {
         return translationLanguage;
     }
+
+    public void close() {
+        try {
+            conn.close();
+        } catch(SQLException x) {
+            x.printStackTrace();
+        }
+    }
     
+    
+
     private String mkString(List<String> terms, int i, int j) {
         boolean first = true;
         final StringBuilder sb = new StringBuilder();
@@ -108,7 +119,7 @@ public class SQLPhraseTable implements PhraseTable {
         try {
             final PreparedStatement stat = conn.prepareStatement("select translation, scores from phrase_table where forin=?");
             final ArrayList<PhraseTableEntry> result = new ArrayList<PhraseTableEntry>();
-            for (int i = 0; i < terms.size() - 1; i++) {
+            for (int i = 0; i < terms.size(); i++) {
                 for (int j = i + 1; j <= terms.size(); j++) {
                     final String query = mkString(terms, i, j);
                     stat.setString(1, query);
@@ -117,6 +128,9 @@ public class SQLPhraseTable implements PhraseTable {
                         result.add(mkPTE(rs, query));
                     }
                 }
+            }
+            if(verbose) {
+                System.err.println(String.format("Collected %d translation candidates", result.size()));
             }
             return result;
         } catch (SQLException x) {
@@ -127,6 +141,11 @@ public class SQLPhraseTable implements PhraseTable {
     public static class Factory implements PhraseTableFactory {
 
         public SQLPhraseTable getPhraseTable(String foreignLanguage, String translationLanguage, String[] featureNames, File file) {
+            try {
+                Class.forName("org.sqlite.JDBC");
+            } catch (ClassNotFoundException x) {
+                System.err.println("SQLite JDBC Drive not available");
+            }
             if (file.getName().endsWith(".db")) {
                 return new SQLPhraseTable(foreignLanguage, translationLanguage, featureNames, file);
             } else {

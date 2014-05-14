@@ -13,7 +13,6 @@ else
 fi
 
 MAIN_CLASS="eu.monnetproject.translation.fidel.Fidel"
-shift
 ARGS=$@
 
 ionice -c 3 nice mvn -q exec:java -Dexec.mainClass="$MAIN_CLASS" -Dexec.args="$ARGS"
