@@ -77,11 +77,11 @@ public class SQLLanguageModel implements IntegerLanguageModel {
             final PreparedStatement statement = this.conn.prepareStatement("select score, backoff from language_model where ngram=?");
             final StringBuilder sb = new StringBuilder();
             boolean first = true;
-            for (int i : phrase.p) {
+            for(int i = phrase.l; i < phrase.l + phrase.n; i++) {
                 if (!first) {
                     sb.append(" ");
                 }
-                sb.append(i);
+                sb.append(phrase.p[i]);
                 first = false;
             }
             statement.setString(1, sb.toString());
