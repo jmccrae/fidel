@@ -293,7 +293,7 @@ public class FidelDecoder {
         } else if (lmN > 1) {
             final Phrase boPh = new Phrase(buf, p - lmN, lmN - 1);
             final double[] boScore = languageModel.get(boPh);
-            if (boScore != null && boScore.length > 0) {
+            if (boScore != null && boScore.length > 1) {
                 final double scoreWithBO = boScore[1] + lmScore(buf, p, languageModel, lmN - 1, unk);
                 return scoreWithBO;
             } else {
