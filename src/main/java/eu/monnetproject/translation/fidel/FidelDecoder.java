@@ -164,7 +164,7 @@ public class FidelDecoder {
                                 throw new RuntimeException();
                             }
 
-                            rightShiftBuffer(buf, d, pos - d);
+                            rightShiftBuffer(buf, 1, pos - d);
                             buf[pos - d] = -src[i];
 
 
@@ -180,7 +180,7 @@ public class FidelDecoder {
                                     newSoln.printSoln(wordMap);
                                 }
                             }
-                            leftShiftBuffer(buf, d, pos);
+                            leftShiftBuffer(buf, 1, pos - d);
                         }
                     } else {
                         // We don't search for longer phrases
