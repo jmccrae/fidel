@@ -47,17 +47,9 @@ public class FidelDecoder {
     public static Int2ObjectMap<String> wordMap;
     public static Object2IntMap<String> srcWordMap;
     private static final boolean verbose = Boolean.parseBoolean(System.getProperty("fidel.verbose", "false"));
-//    private static final PrintWriter log;
-
-//    static {
-//        PrintWriter log2 = null;
-//        try {
-//            log2 = new PrintWriter("decode-stats.csv");
-//        } catch (IOException x) {
-//        }
-//        log = log2;
-//        log.println("ITERS,SOLN_ITER,N,SCORE");
-//    }
+    // Best partial solution must be SEARCH_RATIO worse than the solution to terminate
+    private static final double SEARCH_RATIO = 0.95;
+    
     public static void printPhrase(int[] p) {
         for (int i = 0; i < p.length; i++) {
             if (wordMap != null) {
@@ -106,7 +98,7 @@ public class FidelDecoder {
         int iterationNo = 0;
         int solnFound = 0;
 
-        while (!beam.isEmpty() && (beam.bestScore() > solns.leastScore() || solns.size() < nBest)) {
+        while (!beam.isEmpty() && (beam.bestScore() * SEARCH_RATIO > solns.leastScore() || solns.size() < nBest)) {
             // Take the best solution
             final Solution solnTmp = beam.poll();
             final SolutionImpl soln;
@@ -119,7 +111,7 @@ public class FidelDecoder {
             }
             iterationNo++;
             if (verbose) {
-                System.err.print("Selecting ");
+                System.err.print("Selecting "); 
                 soln.printSoln(wordMap);
             }
             // If it is a complete solution we add it to the solution beam
@@ -127,6 +119,9 @@ public class FidelDecoder {
                 solns.add(soln);
                 if (soln == solns.first()) {
                     solnFound = iterationNo;
+                }
+                if(verbose) {
+                    System.err.println(String.format("Active/Solution ratio: %.6f/%.6f", beam.bestScore(), solns.leastScore()));
                 }
                 continue;
             }
@@ -243,7 +238,6 @@ public class FidelDecoder {
                                 }
 
                                 if (!Double.isInfinite(score)
-                                        && (score > solns.leastScore() || !solns.isFull())
                                         && (score > beam.leastScore() || !beam.isFull())) {
                                     final double[] newFeatures = Arrays.copyOf(soln.features, soln.features.length);
                                     for (int f = 0; f < newFeatures.length; f++) {
@@ -270,8 +264,6 @@ public class FidelDecoder {
                 }
             }
         }
-//        log.println(iterationNo + "," + solnFound + "," + src.length + "," + solns.bestScore());
-//        log.flush();
         return solns.toArray();
     }
 
